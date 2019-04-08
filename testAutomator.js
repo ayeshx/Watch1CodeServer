@@ -19,6 +19,9 @@ workbook.xlsx.readFile('./Examples.xlsx')
         worksheet.eachRow({ includeEmpty: false }, function(row, rowNumber) {
             if(rowNumber > startFrom){
             console.log("Row " + rowNumber + " = " + JSON.stringify(row.values[2]) + ','+ JSON.stringify(row.values[4]) + ','  + JSON.stringify(row.values[6]) + ',' + JSON.stringify(row.values[8]));
+            if(row.values[7] == '2'){
+                targetWatch = 'Fitbit';
+            }
             require('child_process').execSync('node ~/ayesh-server/Watch1CodeServer/server.js --episodeId ' + row.values[2]+ ' --mode ' + JSON.stringify(row.values[4]) + ' --frequency ' + JSON.stringify(row.values[6]) + ' --profile ' + JSON.stringify(row.values[8])  + ' --targetWatch ' + targetWatch, {stdio:[0,1,2]});
             console.log('DONNEEEEEE WITH A ROWW');
             // execSync('killall tshark');

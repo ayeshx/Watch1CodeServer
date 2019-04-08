@@ -119,7 +119,8 @@ var client  = mqtt.connect('mqtt://localhost:1883')
  
 client.on('connect', function () {
   client.subscribe('watch1/watchdata');
-  client.subscribe('watch1/finaldata')
+  client.subscribe('watch1/finaldata');
+  client.subscribe('watch2/finaldata');
   // client.subscribe('watch1/heartdata/cpu');
   // client.subscribe('watch1/heartdata/mem');
 });
@@ -129,7 +130,7 @@ client.on('message', function (topic, message) {
   if(topic.substring(7) == "watchdata"){
     console.log('Received watch data... Replying');
     client.publish('watch1/ack','Received your message');
-  } else {
+  } else if(topic == 'watch1/finaldata') {
     var pkg = JSON.parse(message);
     // if(pkg.battery){
     console.log(`TimeStamp: ${pkg.time} ; Heart Rate: ${pkg.hrm.rate} ; Battery level: ${pkg.battery.level} ; CPU Load: ${pkg.cpuLoad.load} ; Available Mem: ${pkg.av_Mem} ; Total Mem: ${pkg.totalMemory}`);
@@ -139,10 +140,19 @@ client.on('message', function (topic, message) {
       console.log(err);
       //Inserted in the cluster
     });
-  }  
+  }  else if(topic == 'watch2/finaldata'){
+    var pkg = JSON.parse(message);
+    console.log(`TimeStamp: ${pkg.timestamp} ; Heart Rate: ${pkg.heartRate} ; Battery level: ${pkg.battery} ; Available Mem: ${pkg.av_Mem} ; Total Mem: ${pkg.totalMemory}`);
+    const query = `INSERT INTO watch_analytics.experiment${exp_num} (timestamp, watch, type, heartrate, batterylevel,availablememory,totalmemory) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const params = [pkg.timestamp, 'watch2', 'fitbit versa', pkg.heartRate, pkg.battery, pkg.av_Mem, pkg.totalMemory];
+    cass_client.execute(query, params, { prepare: true }, function (err) {
+      console.log(err);
+      //Inserted in the cluster
+    });
+  }
 });
 
-if(targetWatch != "all" && targetWatch != null) {
+if(targetWatch != "all" && targetWatch != null && targetWatch != 'Fitbit') {
     console.log('~/tizen-studio/tools/sdb connect ' + targetWatch);
     console.log('Got here');
     execSync('~/tizen-studio/tools/sdb connect ' + targetWatch);
@@ -152,7 +162,7 @@ if(targetWatch != "all" && targetWatch != null) {
   // else if (targetWatch == null){
   //   break;
   // }
-  else
+  else if(targetWatch == 'all')
   {
     for (var j = 122; j < 130; j++) {
         console.log('~/tizen-studio/tools/sdb connect 192.168.0.' + j);
@@ -161,6 +171,8 @@ if(targetWatch != "all" && targetWatch != null) {
     for (var j = 122; j < 130; j++) {
         execSync('~/tizen-studio/tools/sdb -s 192.168.0.' + j + ':26101 shell launch_app PRsDVBBVB0.HeartRateMonitor');
     }
+  } else {
+    execSync('cd ../test1; npx fitbit-build; npx fitbit;fitbit$ install');
   }
 setTimeout(function(){
     process.exit();

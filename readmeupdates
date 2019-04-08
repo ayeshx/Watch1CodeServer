@@ -1,0 +1,11 @@
+changes to readme:
+check wifi driver
+change directory in all files
+update your examples.xlsx as your experiment's requirements
+tcconfig and tshark check if they're installed
+change the appID with that of your app
+change the target watch ip address
+have to be on the same network
+check tcconfigprofiles and add your device address to each profile
+wireshark init.lua problem /usr/share/wireshar/init.lua set disabled = true
+pcaps folder write issue
