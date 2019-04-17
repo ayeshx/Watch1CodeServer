@@ -12,6 +12,7 @@
     "cassandra-driver": "^4.0.0",
     "exceljs": "^1.7.0",
     "mqtt": "^2.18.8",
-    "pcap2csv": "^1.1.1"
+    "pcap2csv": "^1.1.1",
+    "tree-kill": "^1.2.1"
   }
 }

@@ -2,7 +2,7 @@ var Excel = require('exceljs');
 
 var pcap2csv = require('./index');
 var startFrom = 1;
-var targetWatch = '192.168.0.112';
+var targetWatch = '192.168.0.111';
 var isMac = /^darwin/.test(process.platform);
 const { execSync } = require('child_process');
 try{
@@ -21,6 +21,9 @@ workbook.xlsx.readFile('./Examples.xlsx')
             console.log("Row " + rowNumber + " = " + JSON.stringify(row.values[2]) + ','+ JSON.stringify(row.values[4]) + ','  + JSON.stringify(row.values[6]) + ',' + JSON.stringify(row.values[8]));
             if(row.values[7] == '2'){
                 targetWatch = 'Fitbit';
+            }
+            if(row.values[7] == '3'){
+                targetWatch = 'Huawei';
             }
             require('child_process').execSync('node ~/ayesh-server/Watch1CodeServer/server.js --episodeId ' + row.values[2]+ ' --mode ' + JSON.stringify(row.values[4]) + ' --frequency ' + JSON.stringify(row.values[6]) + ' --profile ' + JSON.stringify(row.values[8])  + ' --targetWatch ' + targetWatch, {stdio:[0,1,2]});
             console.log('DONNEEEEEE WITH A ROWW');
