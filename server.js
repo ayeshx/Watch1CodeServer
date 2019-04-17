@@ -1,11 +1,12 @@
 var argv = require('minimist')(process.argv.slice(2));
 var mqtt = require('mqtt');
 const cassandra = require('cassandra-driver');
-var kill = require('tree-kill');
 var network_driver = 'wlp2s0';
 var tcconfigprofiles = '/home/watch1/ayesh-server/Watch1CodeServer/tcconfigprofiles/';
 var pcaps = '/home/watch1/ayesh-server/Watch1CodeServer/pcaps/';
 var adb_huawei_addr = '10.42.0.100:5555';
+// var sdb_samsung_addr = '192.168.0.100';
+var sdb_app_id = 'PRsDVBBVB0.HeartRateMonitor';
 
 const cass_client = new cassandra.Client({
   contactPoints: ['localhost'],

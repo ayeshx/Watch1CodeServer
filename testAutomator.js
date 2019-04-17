@@ -5,6 +5,8 @@ var startFrom = 1;
 var targetWatch = '192.168.0.111';
 var isMac = /^darwin/.test(process.platform);
 const { execSync } = require('child_process');
+const server_file = '~/ayesh-server/Watch1CodeServer/server.js';
+const pcaps = '/home/watch1/ayesh-server/Watch1CodeServer/pcaps/';
 try{
 execSync('killall tshark');
 }
@@ -25,7 +27,7 @@ workbook.xlsx.readFile('./Examples.xlsx')
             if(row.values[7] == '3'){
                 targetWatch = 'Huawei';
             }
-            require('child_process').execSync('node ~/ayesh-server/Watch1CodeServer/server.js --episodeId ' + row.values[2]+ ' --mode ' + JSON.stringify(row.values[4]) + ' --frequency ' + JSON.stringify(row.values[6]) + ' --profile ' + JSON.stringify(row.values[8])  + ' --targetWatch ' + targetWatch, {stdio:[0,1,2]});
+            require('child_process').execSync(`node ${server_file} --episodeId ` + row.values[2]+ ' --mode ' + JSON.stringify(row.values[4]) + ' --frequency ' + JSON.stringify(row.values[6]) + ' --profile ' + JSON.stringify(row.values[8])  + ' --targetWatch ' + targetWatch, {stdio:[0,1,2]});
             console.log('DONNEEEEEE WITH A ROWW');
             // execSync('killall tshark');
             if(isMac){
@@ -35,6 +37,6 @@ workbook.xlsx.readFile('./Examples.xlsx')
             }
             }
         });
-        pcap2csv('/home/watch1/ayesh-server/Watch1CodeServer/pcaps/','tcp');
+        pcap2csv(`${pcaps}`,'tcp');
     });
 
