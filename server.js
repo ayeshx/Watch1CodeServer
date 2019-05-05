@@ -1,40 +1,62 @@
-var argv = require('minimist')(process.argv.slice(2));
-var mqtt = require('mqtt');
-const cassandra = require('cassandra-driver');
-var network_driver = 'wlp2s0';
-var tcconfigprofiles = '/home/watch1/ayesh-server/Watch1CodeServer/tcconfigprofiles/';
-var pcaps = '/home/watch1/ayesh-server/Watch1CodeServer/pcaps/';
-var adb_huawei_addr = '10.42.0.100:5555';
-// var sdb_samsung_addr = '192.168.0.100';
-var sdb_app_id = 'PRsDVBBVB0.HeartRateMonitor';
+/*
+  ============= Imports and Declarations ==========================================================
+*/
+var argv = require('minimist')(process.argv.slice(2)); //for parsing command line arguments from testAutomator.js
+var mqtt = require('mqtt');      
 
+//driver for cassandraDB         
+const cassandra = require('cassandra-driver');
+
+//Wifi interface on your machine
+var network_driver = 'wlp2s0';
+
+//path to tcconfig profiles for network shaping, edit the json file for each profile to add your target IP 
+var tcconfigprofiles = '/home/watch1/ayesh-server/Watch1CodeServer/tcconfigprofiles/';
+
+//path to the pcaps file location with packet captures from tshark
+var pcaps = '/home/watch1/ayesh-server/Watch1CodeServer/pcaps/';
+
+var duration = argv.duration;
+
+//Creating new Cassandra Client
 const cass_client = new cassandra.Client({
   contactPoints: ['localhost'],
   localDataCenter: 'datacenter1'
 });
-var exp_num = 4;
 
+//Experiment Number, which will create a table with that name
+var exp_num = 27;
+
+// ================================== END IMPORTS SECTION ===============================================================
+
+/*
+  ===========  Cassandra Table Creation =====================
+*/
 cass_client.connect(function (err) {
   //   console.log(err);
   cass_client.execute(`CREATE KEYSPACE IF NOT EXISTS watch_analytics WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };`)
     .then(() => {
       console.log('Here');
       // console.log('Heree');
-      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.experiment${exp_num}(timestamp bigint primary key, watch text, type text, heartrate int, batterylevel double,cpuload double, availablememory double, totalmemory double, roundtriptime int );`,
+      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.experiment${exp_num}(Network_Profile text, Exp_Name text, episodeID text, timestamp bigint primary key, Device_ID text, type text, sensor_data int, batterylevel double,cpuload double, availablememory double, totalmemory double, roundtriptime int );`,
         (err, result) => {
           console.log(err, result);
         });
     });
 });
 
-//Network Shaping
+//======================== END CDB SECTION ====================================
 
-//var targetWatch = '192.168.0.121';
-var targetWatch = null;
+/*
+  ======================= Network Shaping ================================
+*/
+
+// getting target device from command line parameters sent by testAutomator
+var targetDevice = null;
 console.dir(argv);
 try {
-  if (argv.targetWatch != null) {
-    targetWatch = argv.targetWatch;
+  if (argv.targetDevice != null) {
+    targetDevice = argv.targetDevice;
   }
 }
 catch (err) { }
@@ -45,6 +67,8 @@ console.log('os is mac?' + isMac);
 
 var d = new Date();
 var n = d.getTime();
+
+//creating unique names for pcap files with episode ID and timestamp
 var episode = argv.episodeId + '-' + n;
 
 
@@ -90,8 +114,11 @@ try {
         stdout = execSync('sudo dnctl pipe 1 config bw 240Kbit/s plr 0.01 delay 400');
       }
     }
-    else {
+    else {  //network shaping for non Mac Devices
+      // setting profiles from the json file based on the profile from the excel file
       var stdout = execSync(`sudo tcset --import-setting ${tcconfigprofiles}` + argv.profile + '.json');
+
+      //show the network configurations on the wifi driver
       stdout = execSync(`sudo tcshow --device ${network_driver}`);
     }
   }
@@ -105,7 +132,9 @@ catch (err) {
 //tshark
 // http://nodejs.org/api.html#_child_processes
 console.log(`tshark -i any -f "tcp port 3000" -w ${pcaps}` + episode + '.pcap');
-exec(`tshark -i any -f "tcp port 3000" -w ${pcaps}` + episode + '.pcap', (err, stdout, stderr) => {
+
+//tshark captures packets only on websocket port 3000 and default mqtt port 1883 and writes out to a pcap file
+exec(`tshark -i any -f "tcp port 3000" -f "tcp port 1883" -w ${pcaps}` + episode + '.pcap', (err, stdout, stderr) => {
   if (err) {
     console.log(err.message);
     // node couldn't execute the command
@@ -115,31 +144,66 @@ exec(`tshark -i any -f "tcp port 3000" -w ${pcaps}` + episode + '.pcap', (err, s
   console.log(`stdout: ${stdout}`);
   console.log(`stderr: ${stderr}`);
 });
-//tshark
+//========================= END NETWORK SHAPING ================================================
 
+/*
+  ========================== MQTT Section ======================================================
+*/
 
-// my old part
+// connect to local mqtt broker
+var client = mqtt.connect('mqtt://localhost:1883');
 
-var client = mqtt.connect('mqtt://localhost:1883')
-
+//all automation tasks will only happen on successful connection to a broker
 client.on('connect', function () {
-  client.subscribe('watch1/watchdata');
-  client.subscribe('watch1/finaldata');
-  client.subscribe('watch2/watchdata');
-  client.subscribe('watch2/finaldata');
-  client.subscribe('watch3/watchdata');
-  client.subscribe('watch3/finaldata');
-  if (targetWatch != "all" && targetWatch != null && targetWatch != 'Fitbit' && targetWatch != 'Huawei') {
-    console.log('~/tizen-studio/tools/sdb connect ' + targetWatch);
-    console.log('Got here');
-    execSync('~/tizen-studio/tools/sdb connect ' + targetWatch);
-    console.log('Connected');
-    execSync('~/tizen-studio/tools/sdb shell launch_app PRsDVBBVB0.HeartRateMonitor');
+
+  //check what the target device is and accordingly subscribe to the topics
+  if(targetDevice == 'Fitbit'){
+    client.subscribe('watch2/watchdata');
+    client.subscribe('watch2/finaldata');
+  } else if(targetDevice == 'Huawei'){
+    client.subscribe('watch3/watchdata');
+    client.subscribe('watch3/finaldata');
+    client.subscribe('watch3/connect');
+  } else if(targetDevice == 'Samsung'){
+    client.subscribe('watch1/watchdata');
+    client.subscribe('watch1/finaldata');
+    client.subscribe('watch1/connect');
+  } else if(targetDevice == 'ESP32'){
+    client.subscribe('ESP32/data');
+    client.subscribe('ESP32/finaldata');
   }
-  // else if (targetWatch == null){
-  //   break;
-  // }
-  else if (targetWatch == 'all') {
+
+  //---------------------- Automation Section (Launch Apps on Different Devices) -----------------------------------
+
+  //Samsung launch app using SDB tool
+  if (targetDevice == 'Samsung') {
+    console.log('~/tizen-studio/tools/sdb connect ' + argv.samsung);
+    console.log('Got here');
+    var child = execSync('~/tizen-studio/tools/sdb connect ' + argv.samsung, (err,stdout,stderr)=>{
+      if(err){
+        exec('~/tizen-studio/tools/sdb connect ' + argv.samsung);
+      }
+      if(stdout){
+        console.log(stdout);
+      } 
+      if(stderr){
+        console.log(stderr);
+        exec('~/tizen-studio/tools/sdb connect ' + argv.samsung);
+      }
+    });
+    console.log('Connected');
+    execSync('~/tizen-studio/tools/sdb shell launch_app PRsDVBBVB0.HeartRateMonitor', (err,stdout,stderr)=>{
+      if(err){
+        console.log('Error in launching app!');
+      }
+    });
+
+    //Send first Mqtt message to tell Samsung to start sending data
+    // client.publish('watch1/start', JSON.stringify({frequency:argv.frequency, duration: duration}),{qos:2});
+  }
+
+  //if you want to launch app on multiple Samsung watches
+  else if (targetDevice == 'all') {
     for (var j = 122; j < 130; j++) {
       console.log('~/tizen-studio/tools/sdb connect 192.168.0.' + j);
       execSync('~/tizen-studio/tools/sdb connect 192.168.0.' + j);
@@ -147,43 +211,68 @@ client.on('connect', function () {
     for (var j = 122; j < 130; j++) {
       execSync('~/tizen-studio/tools/sdb -s 192.168.0.' + j + ':26101 shell launch_app PRsDVBBVB0.HeartRateMonitor');
     }
-  } else if (targetWatch == 'Fitbit') {
+  } 
+  // if target device is Fitbit device we use the fitbit CLI tool to build and launch the app
+  else if (targetDevice == 'Fitbit') {
     execSync('cd ../test1; npx fitbit-build; npx fitbit', { stdio: "inherit" });
-  } else if (targetWatch == 'Huawei') {
-    execSync(`adb connect ${adb_huawei_addr}`, (err, stdout, stderr) => {
-      if (err) {
-        console.log(err);
-        execSync(`adb connect ${adb_huawei_addr}`);
-        var child = exec('tns run android', { cwd: '../test2huawei' }, (err, stdout, stderr) => {
-          if (err) {
-            console.log(err);
-          }
-          if (stdout) { console.log(stdout); }
-          if (stderr) { console.log(stderr); }
-        });
-        child.stdout.on('data', (data) => {
-          console.log(data);
-        });
-      }
-      if (stdout) { console.log(stdout); }
-      if (stderr) { console.log(stderr); }
-    });
+
+    //send first MQTT message to tell Fitbit to start sending data
+    client.publish('watch2/start',JSON.stringify({frequency:argv.frequency,duration:duration}));
+  } 
+  //if target device is Android Wear (Huawei) we use Nativescript CLI tool to launch and install the app
+  else if (targetDevice == 'Huawei') {
+    // execSync(`adb connect ${adb_huawei_addr}`, (err, stdout, stderr) => {
+    //   if (err) {
+    //     console.log(err);
+    //     execSync(`adb connect ${adb_huawei_addr}`);
+    //     var child = exec('tns run android', { cwd: '../test2huawei' }, (err, stdout, stderr) => {
+    //       if (err) {
+    //         console.log(err);
+    //       }
+    //       if (stdout) { console.log(stdout); }
+    //       if (stderr) { console.log(stderr); }
+    //     });
+    //     child.stdout.on('data', (data) => {
+    //       console.log(data);
+    //     });
+    //   }
+    //   if (stdout) { console.log(stdout); }
+    //   if (stderr) { console.log(stderr); }
+    // });
     var child = exec('tns run android', { cwd: '../test2huawei' }, (err, stdout, stderr) => {
       if (err) {
-        console.log(err);
+        console.log('Err' + err);
       }
       if (stdout) { console.log(stdout); }
-      if (stderr) { console.log(stderr); }
+      if (stderr) { console.log('STD ERR' + stderr); }
     });
     child.stdout.on('data', (data) => {
       console.log(data);
     });
+
+
+  } 
+  //If device is ESP32 just send MQTT message to tell it to start sending data
+  else if(targetDevice == 'ESP32'){
+    client.publish('ESP32/start','start');
   }
 });
+    //------------------------------- END AUTOMATION SECTION --------------------------------------------------
+
+// ------------------------------- MQTT Data and Save to Cassandra DB ----------------------------------------
 
 client.on('message', function (topic, message) {
   // message is Buffer 
-  if (topic == 'watch1/watchdata') {
+  // First data sent by all devices to which the server sends an ack to calculate roundtrip time on each device
+  if(topic == 'watch1/connect'){
+    console.log('Samsung Ready Received!');
+    client.publish('watch1/start', "Start");
+  } else if(topic == 'watch3/connect'){
+    console.log('Huawei Ready Received!');
+        //Send first MQTT message to Android Wear Nativescript App to tell it start sending data
+        client.publish('watch3/start',JSON.stringify({frequency:argv.frequency,duration:duration}));
+  }
+  else if (topic == 'watch1/watchdata') {
     console.log('Received Samsung data... Replying');
     client.publish('watch1/ack', 'Received your message');
   } else if (topic == 'watch2/watchdata') {
@@ -192,44 +281,87 @@ client.on('message', function (topic, message) {
   } else if (topic == 'watch3/watchdata') {
     console.log('Received Huawei data...Replying');
     client.publish('watch3/ack', 'Received your message');
-  } else if (topic == 'watch1/finaldata') {
+  } else if(topic == 'ESP32/data'){
+    console.log('Received ESP32 data... Replying');
+    client.publish('ESP32/ack','Received your message');  
+  } 
+  // Second data sent by all devices with round trip time field (Final Data Package) which we save to Cassandra DB
+  else if (topic == 'watch1/finaldata') { //Samsung Final Data
     var pkg = JSON.parse(message);
     // if(pkg.battery){
     console.log(`TimeStamp: ${pkg.time} ; Heart Rate: ${pkg.hrm.rate} ; Battery level: ${pkg.battery.level} ; CPU Load: ${pkg.cpuLoad.load} ; Available Mem: ${pkg.av_Mem} ; Total Mem: ${pkg.totalMemory}`);
-    const query = `INSERT INTO watch_analytics.experiment${exp_num} (timestamp, watch, type, heartrate, batterylevel,cpuload,availablememory,totalmemory, roundtriptime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    const params = [pkg.time, 'watch1', 'Samsung gear s3', pkg.hrm.rate, pkg.battery.level, pkg.cpuLoad.load, pkg.av_Mem, pkg.totalMemory, pkg.roundtrip_time];
+    const query = `INSERT INTO watch_analytics.experiment${exp_num} (Network_Profile, episodeID, Exp_Name, timestamp, Device_ID, type, sensor_data, batterylevel,cpuload,availablememory,totalmemory, roundtriptime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const params = [argv.profile, episode, argv.name, pkg.time, 'watch1', 'Samsung gear s3', pkg.hrm.rate, pkg.battery.level, pkg.cpuLoad.load, pkg.av_Mem, pkg.totalMemory, pkg.roundtrip_time];
     cass_client.execute(query, params, { prepare: true }, function (err) {
       console.log(err);
       //Inserted in the cluster
     });
     setTimeout(function () {
-      process.exit();
-    }, 70000);
-  } else if (topic == 'watch2/finaldata') {
+      //Send Kill Message to Stop the App on Samsung
+      client.publish('watch1/kill',"kill");
+
+      //Give a delay to allow the kill message to reach
+      setTimeout(function(){
+        //Exit this server process to read next row in the excel file from testAutomator.js
+        process.exit();
+      },5000);
+    }, duration); //duration is how long we want the test for a device to run (this process)
+  } else if (topic == 'watch2/finaldata') { //FItbit final data
     var pkg = JSON.parse(message);
     console.log(`TimeStamp: ${pkg.timestamp} ; Heart Rate: ${pkg.heartRate} ; Battery level: ${pkg.battery} ; Available Mem: ${pkg.av_Mem} ; Total Mem: ${pkg.totalMemory}`);
-    const query = `INSERT INTO watch_analytics.experiment${exp_num} (timestamp, watch, type, heartrate, batterylevel,availablememory,totalmemory, roundtriptime) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-    const params = [pkg.timestamp, 'watch2', 'fitbit versa', pkg.heartRate, pkg.battery, pkg.av_Mem, pkg.totalMemory, pkg.roundtrip_time];
+    const query = `INSERT INTO watch_analytics.experiment${exp_num} (Network_Profile, episodeID, Exp_Name, timestamp, Device_ID, type, sensor_data, batterylevel,availablememory,totalmemory, roundtriptime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const params = [argv.profile, episode, argv.name, pkg.timestamp, 'watch2', 'fitbit versa', pkg.heartRate, pkg.battery, pkg.av_Memory, pkg.totalMemory, pkg.roundtrip_time];
     cass_client.execute(query, params, { prepare: true }, function (err) {
       console.log(err);
       //Inserted in the cluster
     });
     setTimeout(function () {
-      process.exit();
-    }, 70000);
-  } else if (topic == 'watch3/finaldata') {
+      //Send Kill Message to Stop the App on Fitbit
+      client.publish('watch2/kill',"kill");
+
+      //Give a delay to allow the kill message to reach
+      setTimeout(function(){
+        //Exit this server process to read next row in the excel file from testAutomator.js
+        process.exit();
+      },5000);
+    }, duration); //duration is how long we want the test for a device to run (this process)
+  } else if (topic == 'watch3/finaldata') { //If 
     var pkg = JSON.parse(message);
     console.log(`TimeStamp: ${pkg.timestamp} ; Heart Rate: ${pkg.heartRate} ; Battery level: ${pkg.battery} ; Available Mem: ${pkg.av_Mem} ; Total Mem: ${pkg.totalMemory}`);
-    const query = `INSERT INTO watch_analytics.experiment${exp_num} (timestamp, watch, type, heartrate, batterylevel,availablememory,totalmemory, roundtriptime) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-    const params = [pkg.timestamp, 'watch3', 'Huawei Watch 2', pkg.heartRate, pkg.battery, pkg.av_Mem, pkg.totalMemory, pkg.roundtrip_time];
+    const query = `INSERT INTO watch_analytics.experiment${exp_num} (Network_Profile, episodeID, Exp_Name, timestamp, Device_ID, type, sensor_data, batterylevel,availablememory,totalmemory, roundtriptime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const params = [argv.profile, episode, argv.name, pkg.timestamp, 'watch3', 'Huawei Watch 2', pkg.heartRate, pkg.battery, pkg.av_Mem, pkg.totalMemory, pkg.roundtrip_time];
     cass_client.execute(query, params, { prepare: true }, function (err) {
       console.log(err);
       //Inserted in the cluster
     });
     setTimeout(function () {
-      process.exit();
-    }, 70000);
+      client.publish("watch3/kill","kill");
+      setTimeout(function(){
+        process.exit();
+      },5000);
+    }, duration);
+  } else if(topic == 'ESP32/finaldata'){
+    console.log('Roundtrip from ESP32:'+message);
+    var pkg = JSON.parse(message);
+    console.log(`Text: ${pkg.text} ; Rountrip Time: ${pkg.roundtrip_time}`);
+    const query = `INSERT INTO watch_analytics.experiment${exp_num} (Network_Profile, episodeID, Exp_Name, timestamp, Device_ID, type, roundtriptime) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const params = [argv.profile, episode, argv.name, new Date().getTime(), 'Device4', 'ESP32',pkg.roundtrip_time];
+    cass_client.execute(query, params, { prepare: true }, function (err) {
+      console.log(err);
+      //Inserted in the cluster
+    });
+    setTimeout(function () {
+      console.log('Ending ESP32..');
+      if(client.disconnected){
+        console.log('Disconnected');
+      }
+      client.publish('ESP32/kill','njn',{qos:1});
+      setTimeout(function(){
+        process.exit();
+      },5000);
+      
+    }, duration);
   }
 });
 
-
+// ================================= END MQTT SECTION ==========================================

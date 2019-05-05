@@ -1,12 +1,20 @@
-var Excel = require('exceljs');
+/*
+    ======================= Imports and Declarations ===============================================
+*/
 
-var pcap2csv = require('./index');
-var startFrom = 1;
-var targetWatch = '192.168.0.111';
+var Excel = require('exceljs');
+var pcap2csv = require('./index'); //requiring local index.js file from pcap2csv module
+var startFrom = 1;                 // Start from  
+var targetDevice = '';
+const samsung_ip = '192.168.1.102'; // Samsung Device IP addr
 var isMac = /^darwin/.test(process.platform);
 const { execSync } = require('child_process');
-const server_file = '~/ayesh-server/Watch1CodeServer/server.js';
-const pcaps = '/home/watch1/ayesh-server/Watch1CodeServer/pcaps/';
+const server_file = '~/ayesh-server/Watch1CodeServer/server.js'; //Change to location of server.js in your machine
+const pcaps = '/home/watch1/ayesh-server/Watch1CodeServer/pcaps/';  //Change to location of pcaps in your machine
+const exp_name = 'Ayesh_test4'; //Change exp_name to whatever you want
+
+//=============================== END SECTION =======================================================
+
 try{
 execSync('killall tshark');
 }
@@ -14,21 +22,34 @@ catch (err){
     console.log(err.message)
 }
 
+/*
+    ================================= Automation Section ==========================================================
+*/
+
+//Opening a new Excel workbook 
 var workbook = new Excel.Workbook();
-workbook.xlsx.readFile('./Examples.xlsx')
+workbook.xlsx.readFile('./Examples.xlsx')   //Opening Examples.xlsx file to read experiment conditions
     .then(function() {
         var worksheet = workbook.getWorksheet('Sheet1');
         worksheet.eachRow({ includeEmpty: false }, function(row, rowNumber) {
             if(rowNumber > startFrom){
             console.log("Row " + rowNumber + " = " + JSON.stringify(row.values[2]) + ','+ JSON.stringify(row.values[4]) + ','  + JSON.stringify(row.values[6]) + ',' + JSON.stringify(row.values[8]));
-            if(row.values[7] == '2'){
-                targetWatch = 'Fitbit';
+            if(row.values[7] == '2'){       //Checking each row for which device is needed
+                targetDevice = 'Fitbit';
+            }
+            if(row.values[7] == '4'){
+                targetDevice = 'ESP32';
             }
             if(row.values[7] == '3'){
-                targetWatch = 'Huawei';
+                targetDevice = 'Huawei';
             }
-            require('child_process').execSync(`node ${server_file} --episodeId ` + row.values[2]+ ' --mode ' + JSON.stringify(row.values[4]) + ' --frequency ' + JSON.stringify(row.values[6]) + ' --profile ' + JSON.stringify(row.values[8])  + ' --targetWatch ' + targetWatch, {stdio:[0,1,2]});
-            console.log('DONNEEEEEE WITH A ROWW');
+            if(row.values[7] == '1'){
+                targetDevice = 'Samsung';
+            }
+            // *************************** STARTING server.js for each row in the file (each episode) ******************************************
+            // equivalent to doing it individually in the cmd line as node server.js arg1 arg2 arg3 ........
+            require('child_process').execSync(`node ${server_file} --episodeId ` + row.values[2]+ ' --mode ' + JSON.stringify(row.values[4]) + ' --frequency ' + JSON.stringify(row.values[6]) + ' --profile ' + JSON.stringify(row.values[8])  + ' --targetDevice ' + targetDevice + ' --name ' + exp_name + ' --samsung ' + samsung_ip + ' --duration ' + row.values[9], {stdio:[0,1,2]});
+            console.log('DONNEEEEEE WITH A ROWW');  //done with one row
             // execSync('killall tshark');
             if(isMac){
                 var stdout = execSync('sudo pfctl -f /etc/pf.conf');
@@ -37,6 +58,7 @@ workbook.xlsx.readFile('./Examples.xlsx')
             }
             }
         });
+        //end of experiment convert all pcap files to csv to get throughput.csv
         pcap2csv(`${pcaps}`,'tcp');
     });
 
