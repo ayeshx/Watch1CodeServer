@@ -22,7 +22,6 @@
                     means that cassandra is crashing, and probably has to do with the amount of space that is required.
                     Try increasing your VM RAM to about 16 GB or so and retry.</p>
             </li>
-
             <li>Additionally, you will need an MQTT broker running locally, try using PONTE npm broker. Installation and
                 setup steps can be found at https://www.npmjs.com/package/ponte</li>
             <li>Once the environment is setup and the broker is running, start the server.</li>
@@ -86,18 +85,12 @@
         <ul>
             <li>Change the SSID, password and IP to the one in which you are running your experiment.</li>
             <li>download and install arduino IDE from https://www.arduino.cc/en/Main/Software</li>
-
             <li>Run arduino IDE</li>
-
             <li>go to <em>file-> preferences</em>  and paste <strong>https://dl.espressif.com/dl/package_esp32_index.json</strong> in additional
                 boards manager url field</li>
-
             <li>go to <em>tools->board->board manager</em> and search for <strong>esp32</strong> and install</li>
-
             <li>go to <em>tools->manage libraries</em>, and search for <strong>mqtt</strong>.</li>
-
             <li>select and install MQTT by <strong><em>joel gaehwiler</em></strong></li>
-
             <li>copy the code from <strong>ESPMQTTArduinoTestAuto.c</strong> to arduino ide, verify and upload</li>
         </ul>
     </li>
