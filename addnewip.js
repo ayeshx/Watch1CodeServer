@@ -1,7 +1,7 @@
 'use strict';
 
 const fs = require('fs');
-var new_ip = '192.168.0.125';
+var new_ip = '192.168.0.127';
 
 //2G-Rural
 let rawdata = fs.readFileSync('./tcconfigprofiles/2G-DevelopingRural.json');  

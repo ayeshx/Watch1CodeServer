@@ -25,7 +25,7 @@ const cass_client = new cassandra.Client({
 });
 
 //Experiment Number, which will create a table with that name
-var exp_num = 27;
+var exp_num = 32;
 
 // ================================== END IMPORTS SECTION ===============================================================
 
@@ -38,7 +38,7 @@ cass_client.connect(function (err) {
     .then(() => {
       console.log('Here');
       // console.log('Heree');
-      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.experiment${exp_num}(Network_Profile text, Exp_Name text, episodeID text, timestamp bigint primary key, Device_ID text, type text, sensor_data int, batterylevel double,cpuload double, availablememory double, totalmemory double, roundtriptime int );`,
+      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.experiment${exp_num}(Network_Profile text, Exp_Name text, episodeID text, timestamp bigint primary key, Device_ID text, type text, sensor_data int, device_data1 int, device_data2 text, batterylevel double,cpuload double, availablememory double, totalmemory double, roundtriptime int );`,
         (err, result) => {
           console.log(err, result);
         });
@@ -171,6 +171,9 @@ client.on('connect', function () {
   } else if(targetDevice == 'ESP32'){
     client.subscribe('ESP32/data');
     client.subscribe('ESP32/finaldata');
+  } else if(targetDevice == 'Apple'){
+    client.subscribe('watch4/watchdata');
+    client.subscribe('watch4/finaldata');
   }
 
   //---------------------- Automation Section (Launch Apps on Different Devices) -----------------------------------
@@ -255,6 +258,10 @@ client.on('connect', function () {
   //If device is ESP32 just send MQTT message to tell it to start sending data
   else if(targetDevice == 'ESP32'){
     client.publish('ESP32/start','start');
+  } 
+
+  else if(targetDevice == 'Apple'){
+    client.publish('watch4/start',"start");
   }
 });
     //------------------------------- END AUTOMATION SECTION --------------------------------------------------
@@ -284,7 +291,10 @@ client.on('message', function (topic, message) {
   } else if(topic == 'ESP32/data'){
     console.log('Received ESP32 data... Replying');
     client.publish('ESP32/ack','Received your message');  
-  } 
+  } else if(topic == "watch4/watchdata"){
+    console.log("Received Apple data... Replying");
+    client.publish('watch4/ack','ack');
+  }
   // Second data sent by all devices with round trip time field (Final Data Package) which we save to Cassandra DB
   else if (topic == 'watch1/finaldata') { //Samsung Final Data
     var pkg = JSON.parse(message);
@@ -344,8 +354,8 @@ client.on('message', function (topic, message) {
     console.log('Roundtrip from ESP32:'+message);
     var pkg = JSON.parse(message);
     console.log(`Text: ${pkg.text} ; Rountrip Time: ${pkg.roundtrip_time}`);
-    const query = `INSERT INTO watch_analytics.experiment${exp_num} (Network_Profile, episodeID, Exp_Name, timestamp, Device_ID, type, roundtriptime) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    const params = [argv.profile, episode, argv.name, new Date().getTime(), 'Device4', 'ESP32',pkg.roundtrip_time];
+    const query = `INSERT INTO watch_analytics.experiment${exp_num} (Network_Profile, episodeID, Exp_Name, timestamp,sensor_data, Device_ID, type, roundtriptime) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    const params = [argv.profile, episode, argv.name, new Date().getTime(), Number(pkg.sensor_data) ,'Device4', 'ESP32',pkg.roundtrip_time];
     cass_client.execute(query, params, { prepare: true }, function (err) {
       console.log(err);
       //Inserted in the cluster
@@ -356,6 +366,27 @@ client.on('message', function (topic, message) {
         console.log('Disconnected');
       }
       client.publish('ESP32/kill','njn',{qos:1});
+      setTimeout(function(){
+        process.exit();
+      },5000);
+      
+    }, duration);
+  } else if(topic == 'watch4/finaldata'){
+    console.log('Received data from Apple Watch...');
+    var pkg = JSON.parse(message);
+    console.log(`X:${pkg.x} ; Y:${pkg.y} ; Z:${pkg.z} ; roundtrip_time:${pkg.roundtrip_time}`);
+    const query = `INSERT INTO watch_analytics.experiment${exp_num} (Network_Profile, episodeID, Exp_Name, timestamp,sensor_data,device_data1, Device_ID, type, roundtriptime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const params = [argv.profile, episode, argv.name, new Date().getTime(), Number(pkg.x) , Number(pkg.y) , 'Device5', 'Apple Watch', pkg.roundtrip_time];
+    cass_client.execute(query, params, { prepare: true }, function (err) {
+      console.log(err);
+      // Inserted in the cluster
+    });
+    setTimeout(function () {
+      console.log('Ending Apple..');
+      if(client.disconnected){
+        console.log('Disconnected');
+      }
+      client.publish('watch4/kill','kill',{qos:1});
       setTimeout(function(){
         process.exit();
       },5000);
