@@ -25,7 +25,7 @@ const cass_client = new cassandra.Client({
 });
 
 //Experiment Number, which will create a table with that name
-var exp_num = 32;
+var exp_num = 40;
 
 // ================================== END IMPORTS SECTION ===============================================================
 
@@ -160,6 +160,7 @@ client.on('connect', function () {
   if(targetDevice == 'Fitbit'){
     client.subscribe('watch2/watchdata');
     client.subscribe('watch2/finaldata');
+    client.subscribe('watch2/connect');
   } else if(targetDevice == 'Huawei'){
     client.subscribe('watch3/watchdata');
     client.subscribe('watch3/finaldata');
@@ -217,10 +218,11 @@ client.on('connect', function () {
   } 
   // if target device is Fitbit device we use the fitbit CLI tool to build and launch the app
   else if (targetDevice == 'Fitbit') {
-    execSync('cd ../test1; npx fitbit-build; npx fitbit', { stdio: "inherit" });
+    var child = exec("cd ../test1; npx fitbit-build; printf 'install' | npx fitbit");
 
-    //send first MQTT message to tell Fitbit to start sending data
-    client.publish('watch2/start',JSON.stringify({frequency:argv.frequency,duration:duration}));
+    child.stdout.on('data', (data) => {
+      console.log(data);
+    });
   } 
   //if target device is Android Wear (Huawei) we use Nativescript CLI tool to launch and install the app
   else if (targetDevice == 'Huawei') {
@@ -276,8 +278,12 @@ client.on('message', function (topic, message) {
     client.publish('watch1/start', "Start");
   } else if(topic == 'watch3/connect'){
     console.log('Huawei Ready Received!');
-        //Send first MQTT message to Android Wear Nativescript App to tell it start sending data
-        client.publish('watch3/start',JSON.stringify({frequency:argv.frequency,duration:duration}));
+    //Send first MQTT message to Android Wear Nativescript App to tell it start sending data
+    client.publish('watch3/start', JSON.stringify({ frequency: argv.frequency, duration: duration }));
+  } else if(topic == 'watch2/connect'){
+    console.log('Fitbit Ready Received!');
+    //send first MQTT message to tell Fitbit to start sending data
+    client.publish('watch2/start', JSON.stringify({ frequency: argv.frequency, duration: duration }));
   }
   else if (topic == 'watch1/watchdata') {
     console.log('Received Samsung data... Replying');
