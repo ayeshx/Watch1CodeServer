@@ -3,6 +3,8 @@
 */
 var argv = require('minimist')(process.argv.slice(2)); //for parsing command line arguments from testAutomator.js
 var mqtt = require('mqtt');      
+var adb_huawei_addr = '192.168.1.17';
+var init_time = 0;
 
 //driver for cassandraDB         
 const cassandra = require('cassandra-driver');
@@ -25,7 +27,7 @@ const cass_client = new cassandra.Client({
 });
 
 //Experiment Number, which will create a table with that name
-var exp_num = 40;
+var exp_num = 52;
 
 // ================================== END IMPORTS SECTION ===============================================================
 
@@ -38,7 +40,7 @@ cass_client.connect(function (err) {
     .then(() => {
       console.log('Here');
       // console.log('Heree');
-      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.experiment${exp_num}(Network_Profile text, Exp_Name text, episodeID text, timestamp bigint primary key, period int, payload int, Device_ID text, type text, sensor_data int, device_data1 int, device_data2 text, batterylevel double,cpuload double, availablememory double, totalmemory double, roundtriptime int );`,
+      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.experiment${exp_num}(Network_Profile text, frequency int, Exp_Name text, episodeID text, timestamp bigint primary key, period int, payload int, Device_ID text, type text, sensor_data int, device_data1 int, device_data2 text, batterylevel double,cpuload double, availablememory double, totalmemory double, roundtriptime int );`,
         (err, result) => {
           console.log(err, result);
         });
@@ -165,6 +167,7 @@ client.on('connect', function () {
     client.subscribe('watch3/watchdata');
     client.subscribe('watch3/finaldata');
     client.subscribe('watch3/connect');
+    client.subscribe('watch3/disconnect');
   } else if(targetDevice == 'Samsung'){
     client.subscribe('watch1/watchdata');
     client.subscribe('watch1/finaldata');
@@ -226,7 +229,7 @@ client.on('connect', function () {
   } 
   //if target device is Android Wear (Huawei) we use Nativescript CLI tool to launch and install the app
   else if (targetDevice == 'Huawei') {
-    // execSync(`adb connect ${adb_huawei_addr}`, (err, stdout, stderr) => {
+    // execSync(`adb connect ${adb_huawei_addr}:5555`, (err, stdout, stderr) => {
     //   if (err) {
     //     console.log(err);
     //     execSync(`adb connect ${adb_huawei_addr}`);
@@ -269,29 +272,48 @@ client.on('connect', function () {
     //------------------------------- END AUTOMATION SECTION --------------------------------------------------
 
 // ------------------------------- MQTT Data and Save to Cassandra DB ----------------------------------------
-
+var count_msg = 0;
 client.on('message', function (topic, message) {
   // message is Buffer 
+  if(topic == 'watch3/disconnect'){
+    console.log('Got Huawei Disconnect message, Reconnecting/Restarting...');
+    var child = exec('tns run android', { cwd: '../test2huawei' }, (err, stdout, stderr) => {
+      if (err) {
+        console.log('Err' + err);
+      }
+      if (stdout) { console.log(stdout); }
+      if (stderr) { console.log('STD ERR' + stderr); }
+    });
+    child.stdout.on('data', (data) => {
+      console.log(data);
+    });
+  }
   // First data sent by all devices to which the server sends an ack to calculate roundtrip time on each device
   if(topic == 'watch1/connect'){
     console.log('Samsung Ready Received!');
-    client.publish('watch1/start', "Start");
+    client.publish('watch1/start', JSON.stringify({ test_type: argv.testtype, frequency: argv.frequency, duration: duration }));
   } else if(topic == 'watch3/connect'){
     console.log('Huawei Ready Received!');
+
     //Send first MQTT message to Android Wear Nativescript App to tell it start sending data
-    client.publish('watch3/start', JSON.stringify({ frequency: argv.frequency, duration: duration }));
+    client.publish('watch3/start', JSON.stringify({ test_type: argv.testtype, frequency: argv.frequency, duration: duration }));
   } else if(topic == 'watch2/connect'){
     console.log('Fitbit Ready Received!');
     //send first MQTT message to tell Fitbit to start sending data
-    client.publish('watch2/start', JSON.stringify({ frequency: argv.frequency, duration: duration }));
+    client.publish('watch2/start', JSON.stringify({ test_type: argv.testtype, frequency: argv.frequency, duration: duration }));
   }
   else if (topic == 'watch1/watchdata') {
+    if(count_msg == 0){
+      init_time = new Date();
+      count_msg ++;
+    }
     console.log('Received Samsung data... Replying');
     client.publish('watch1/ack', 'Received your message');
   } else if (topic == 'watch2/watchdata') {
     console.log('Received Fitbit data... Replying');
     client.publish('watch2/ack', 'Received your message');
   } else if (topic == 'watch3/watchdata') {
+
     console.log('Received Huawei data...Replying');
     client.publish('watch3/ack', 'Received your message');
   } else if(topic == 'ESP32/data'){
@@ -342,10 +364,14 @@ client.on('message', function (topic, message) {
       },5000);
     }, duration); //duration is how long we want the test for a device to run (this process)
   } else if (topic == 'watch3/finaldata') { //If 
+    if(count_msg == 0){
+      init_time = new Date();
+      count_msg ++;
+    }
     var pkg = JSON.parse(message);
     console.log(`TimeStamp: ${pkg.timestamp} ; Heart Rate: ${pkg.heartRate} ; Battery level: ${pkg.battery} ; Available Mem: ${pkg.av_Mem} ; Total Mem: ${pkg.totalMemory}`);
-    const query = `INSERT INTO watch_analytics.experiment${exp_num} (Network_Profile, episodeID, Exp_Name, timestamp, Device_ID, type, sensor_data, batterylevel,availablememory,totalmemory, roundtriptime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    const params = [argv.profile, episode, argv.name, pkg.timestamp, 'watch3', 'Huawei Watch 2', pkg.heartRate, pkg.battery, pkg.av_Mem, pkg.totalMemory, pkg.roundtrip_time];
+    const query = `INSERT INTO watch_analytics.experiment${exp_num} (Network_Profile, frequency, episodeID, Exp_Name, timestamp, Device_ID, type, sensor_data, batterylevel,availablememory,totalmemory, roundtriptime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const params = [argv.profile, argv.frequency, episode, argv.name, pkg.timestamp, 'watch3', 'Huawei Watch 2', pkg.heartRate, pkg.battery, pkg.av_Mem, pkg.totalMemory, pkg.roundtrip_time];
     cass_client.execute(query, params, { prepare: true }, function (err) {
       console.log(err);
       //Inserted in the cluster
@@ -353,6 +379,8 @@ client.on('message', function (topic, message) {
     setTimeout(function () {
       client.publish("watch3/kill","kill");
       setTimeout(function(){
+        var final_time = new Date() - init_time;
+        console.log('No. of messages should be: ' + final_time/argv.frequency);
         process.exit();
       },5000);
     }, duration);

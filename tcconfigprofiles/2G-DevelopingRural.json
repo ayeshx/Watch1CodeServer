@@ -126,6 +126,12 @@
                 "rate": "20K",
                 "loss": "2",
                 "filter_id": "800::800"
+            },
+            "dst-network=192.168.1.19/32, protocol=ip": {
+                "delay": "650ms",
+                "rate": "20K",
+                "loss": "2",
+                "filter_id": "800::800"
             }
         },
         "incoming": {
@@ -250,6 +256,12 @@
                 "filter_id": "800::800"
             },
             "dst-network=192.168.1.5/32, protocol=ip": {
+                "delay": "650ms",
+                "rate": "18K",
+                "loss": "2",
+                "filter_id": "800::800"
+            },
+            "dst-network=192.168.1.19/32, protocol=ip": {
                 "delay": "650ms",
                 "rate": "18K",
                 "loss": "2",

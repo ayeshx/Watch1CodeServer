@@ -52,7 +52,7 @@ workbook.xlsx.readFile('./Examples.xlsx')   //Opening Examples.xlsx file to read
             exp_name = row.values[3];
             // *************************** STARTING server.js for each row in the file (each episode) ******************************************
             // equivalent to doing it individually in the cmd line as node server.js arg1 arg2 arg3 ........
-            require('child_process').execSync(`node ${server_file} --episodeId ` + row.values[2]+ ' --frequency ' + JSON.stringify(row.values[8]) + ' --profile ' + JSON.stringify(row.values[5])  + ' --targetDevice ' + targetDevice + ' --name ' + exp_name + ' --samsung ' + samsung_ip + ' --duration ' + row.values[6] + ' --payload ' + row.values[7], {stdio:[0,1,2]});
+            require('child_process').execSync(`node ${server_file} --episodeId ` + row.values[2]+ ' --frequency ' + JSON.stringify(row.values[8]) + ' --profile ' + JSON.stringify(row.values[5])  + ' --targetDevice ' + targetDevice + ' --name ' + exp_name + ' --samsung ' + samsung_ip + ' --duration ' + row.values[6] + ' --payload ' + row.values[7] + ' --testtype ' + row.values[9], {stdio:[0,1,2]});
             console.log('DONNEEEEEE WITH A ROWW');  //done with one row
             // execSync('killall tshark');
             if(isMac){
