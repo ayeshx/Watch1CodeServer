@@ -27,7 +27,7 @@ const cass_client = new cassandra.Client({
 });
 
 //Experiment Number, which will create a table with that name
-var exp_num = 200;
+var exp_num = 68;
 
 // ================================== END IMPORTS SECTION ===============================================================
 
@@ -41,7 +41,7 @@ cass_client.connect(function (err) {
     .then(() => {
       console.log('Here Audio Test');
       // console.log('Heree');
-      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.experiment${exp_num}(Network_Profile text,Exp_Name text, episodeID text, timestamp bigint primary key, period int, Device_ID text, type text, in_word text, out_word text, prediction_time int, batterylevel double,cpuload double, availablememory double, totalmemory double);`,
+      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.experiment${exp_num}(Network_Profile text,Exp_Name text, episodeID text, timestamp bigint primary key, period int, Device_ID text, type text, word text, prediction_time int, batterylevel double,cpuload double, availablememory double, totalmemory double);`,
         (err, result) => {
           console.log(err, result);
         });
@@ -51,7 +51,7 @@ cass_client.connect(function (err) {
     .then(() => {
       console.log('Here');
       // console.log('Heree');
-      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.experiment${exp_num}(Network_Profile text, frequency int, Exp_Name text, episodeID text, timestamp bigint primary key, period int, payload int, Device_ID text, type text, sensor_data double, device_data1 double, device_data2 text, batterylevel double,cpuload double, availablememory double, totalmemory double, roundtriptime int );`,
+      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.experiment${exp_num}(Network_Profile text, frequency int, Exp_Name text, episodeID text, timestamp bigint primary key, period int, payload int, Device_ID text, type text, sensor_data int, device_data1 int, device_data2 text, batterylevel double,cpuload double, availablememory double, totalmemory double, roundtriptime int );`,
         (err, result) => {
           console.log(err, result);
         });
@@ -149,7 +149,7 @@ catch (err) {
 console.log(`tshark -i any -f "tcp port 3000" -w ${pcaps}` + episode + '.pcap');
 
 //tshark captures packets only on websocket port 3000 and default mqtt port 1883 and writes out to a pcap file
-exec(`tshark -i any -f "tcp port 3000" -f "tcp port 1883" -f "tcp port 5555" -f "tcp port 52280" -w ${pcaps}` + episode + '.pcap', (err, stdout, stderr) => {
+exec(`tshark -i any -f "tcp port 3000" -f "tcp port 1883" -w ${pcaps}` + episode + '.pcap', (err, stdout, stderr) => {
   if (err) {
     console.log(err.message);
     // node couldn't execute the command
@@ -214,7 +214,7 @@ client.on('connect', function () {
       }
     });
     console.log('Connected');
-    if(argv.testtype != 'c_audio' && argv.testtype != 'baseline'){
+    if(argv.testtype != 'c_audio'){
       execSync('~/tizen-studio/tools/sdb shell launch_app PRsDVBBVB0.HeartRateMonitor', (err,stdout,stderr)=>{
         if(err){
           console.log('Error in launching app!');
@@ -343,9 +343,9 @@ client.on('message', function (topic, message) {
   else if(topic == 'watch1/audiodata'){
     var pkg = JSON.parse(message);
     // if(pkg.battery){
-    console.log(`TimeStamp: ${new Date().getTime()} ; IN_Word: ${pkg.input_word} ; OUT_Word: ${pkg.output_word} ; Predic Time: ${pkg.predic_time} ; Battery level: ${pkg.battery.level} ; CPU Load: ${pkg.cpuLoad.load} ; Available Mem: ${pkg.av_Mem} ; Total Mem: ${pkg.totalMemory}`);
-    const query = `INSERT INTO watch_analytics.experiment${exp_num} (Network_Profile,episodeID, Exp_Name, timestamp, Device_ID, type, in_word, out_word, prediction_time, batterylevel,cpuload,availablememory,totalmemory) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    const params = [argv.profile, episode, argv.name, new Date().getTime(), 'watch1', 'Samsung galaxy watch', pkg.input_word, pkg.output_word, pkg.predic_time, pkg.battery.level, pkg.cpuLoad.load, pkg.av_Mem, pkg.totalMemory];
+    console.log(`TimeStamp: ${new Date().getTime()} ; Word: ${pkg.word} ; Predic Time: ${pkg.predic_time} ; Battery level: ${pkg.battery.level} ; CPU Load: ${pkg.cpuLoad.load} ; Available Mem: ${pkg.av_Mem} ; Total Mem: ${pkg.totalMemory}`);
+    const query = `INSERT INTO watch_analytics.experiment${exp_num} (Network_Profile,episodeID, Exp_Name, timestamp, Device_ID, type, word, prediction_time, batterylevel,cpuload,availablememory,totalmemory) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const params = [argv.profile, episode, argv.name, new Date().getTime(), 'watch1', 'Samsung galaxy watch', pkg.word, pkg.predic_time, pkg.battery.level, pkg.cpuLoad.load, pkg.av_Mem, pkg.totalMemory];
     cass_client.execute(query, params, { prepare: true }, function (err) {
       console.log(err);
       //Inserted in the cluster
@@ -430,7 +430,7 @@ client.on('message', function (topic, message) {
     var pkg = JSON.parse(message);
     console.log(`TimeStamp: ${pkg.timestamp} ; Heart Rate: ${pkg.heartRate} ; Battery level: ${pkg.battery} ; Available Mem: ${pkg.av_Mem} ; Total Mem: ${pkg.totalMemory}`);
     const query = `INSERT INTO watch_analytics.experiment${exp_num} (Network_Profile, frequency, episodeID, Exp_Name, timestamp, Device_ID, type, sensor_data, batterylevel,availablememory,totalmemory, roundtriptime) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    const params = [argv.profile, argv.frequency, episode, argv.name, pkg.timestamp, 'watch3', 'Huawei Watch 2', Number(pkg.heartRate), pkg.battery, pkg.av_Mem, pkg.totalMemory, pkg.roundtrip_time];
+    const params = [argv.profile, argv.frequency, episode, argv.name, pkg.timestamp, 'watch3', 'Huawei Watch 2', pkg.heartRate, pkg.battery, pkg.av_Mem, pkg.totalMemory, pkg.roundtrip_time];
     cass_client.execute(query, params, { prepare: true }, function (err) {
       console.log(err);
       //Inserted in the cluster

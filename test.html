@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="description" content="LightSensor" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Light Sensor</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"> </script>
+    <script src="https://unpkg.com/@tensorflow-models/speech-commands"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="./paho-mqtt.js"></script>
+</head>
+
+<body>
+
+    <script type="text/javascript">
+        let recognizer;
+        app();
+
+
+        function predictWord() {
+            // Array of words that the recognizer is trained to recognize.
+            const words = recognizer.wordLabels();
+            //alert('Just before listening');
+            //alert(words);
+            recognizer.listen(({ scores }) => {
+                //alert('Listening');
+                // Turn scores into a list of (score,word) pairs.
+                scores = Array.from(scores).map((s, i) => ({ score: s, word: words[i] }));
+                // Find the most probable word.
+                scores.sort((s1, s2) => s2.score - s1.score);
+                console.log('Message sent');
+            }, { probabilityThreshold: 0.50 });
+        }
+
+        function app() {
+            recognizer = speechCommands.create('BROWSER_FFT');
+            new Promise((resolve, reject) => {
+                // const result = speechCommands.save('downloads://my-model');
+                // console.log(recognizer.model);
+                resolve(recognizer.ensureModelLoaded());
+            }).then(() => {
+                console.log('Model Loaded');
+                // console.log();
+                console.log(recognizer.model.save('downloads://my-model'));
+                console.log(speechCommands);
+                predictWord();
+                //alert('Called predictWord');
+            });
+        }
+    </script>
+
+</body>
+
+</html>
