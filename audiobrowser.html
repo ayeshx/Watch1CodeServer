@@ -17,7 +17,8 @@
 
     <script type="text/javascript">
         let recognizer;
-        var client = new Paho.MQTT.Client('192.168.1.170', 3000, "browser_" + parseInt(Math.random() * 100, 10));
+        var on = 0;
+        var client = new Paho.MQTT.Client('192.168.1.6', 3000, "browser_" + parseInt(Math.random() * 100, 10));
         client.onMessageArrived = onMessageArrived;
 
         // connect the client
@@ -31,9 +32,11 @@
         }
         function onMessageArrived(message){
             if(message.destinationName == 'browser/start'){
-                predictWord();
+                // predictWord();
+                on = 1;
                 setTimeout(()=>{
-                    recognizer.stopListening();
+                    // recognizer.stopListening();
+                    on = 0;
                     var message = new Paho.MQTT.Message("Done listening");
                     message.destinationName = "poisson/done";
                     client.send(message);
@@ -50,7 +53,8 @@
             recognizer.listen(({ scores }) => {
                 //alert('Listening');
                 // Turn scores into a list of (score,word) pairs.
-                scores = Array.from(scores).map((s, i) => ({ score: s, word: words[i] }));
+                if(on == 1){
+                    scores = Array.from(scores).map((s, i) => ({ score: s, word: words[i] }));
                 // Find the most probable word.
                 scores.sort((s1, s2) => s2.score - s1.score);
                 var message = new Paho.MQTT.Message(JSON.stringify({
@@ -59,7 +63,9 @@
                 message.destinationName = "watch1/c_audiodata";
                 client.send(message);
                 console.log('Message sent');
-            }, { probabilityThreshold: 0.50 });
+                }
+
+            }, { probabilityThreshold: 0.45 });
         }
 
         function app() {
@@ -69,6 +75,7 @@
             }).then(() => {
                 console.log('Model Loaded');
                 //alert('Called predictWord');
+                predictWord();
             });
         }
     </script>

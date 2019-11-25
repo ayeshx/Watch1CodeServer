@@ -1,107 +1,17 @@
 {
     "wlp2s0": {
         "outgoing": {
-            "dst-network=192.168.0.111/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.126/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.122/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.110/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.112/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.138/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
             "dst-network=192.168.1.139/32, protocol=ip": {
                 "delay": "90ms",
                 "rate": "850K",
                 "filter_id": "800::800"
             },
-            "dst-network=10.42.0.100/32, protocol=ip": {
-                "delay": "90ms",
+            "dst-network=192.168.1.168/32, protocol=ip": {
+                "delay": "9ms",
                 "rate": "850K",
                 "filter_id": "800::800"
             },
-            "dst-network=10.42.0.38/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=10.42.0.212/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.100/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.102/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.102/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.101/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.123/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.125/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.43.210/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.127/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.16/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.14/32, protocol=ip": {
-                "delay": "90ms",
-                "rate": "850K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.5/32, protocol=ip": {
+            "dst-network=192.168.1.239/32, protocol=ip": {
                 "delay": "90ms",
                 "rate": "850K",
                 "filter_id": "800::800"
@@ -111,139 +21,49 @@
                 "rate": "850K",
                 "filter_id": "800::800"
             },
-            "dst-network=192.168.1.15/32, protocol=ip": {
+            "dst-network=192.168.1.44/32, protocol=ip": {
                 "delay": "90ms",
                 "rate": "850K",
                 "filter_id": "800::800"
             },
-            "dst-network=192.168.1.10/32, protocol=ip": {
+            "dst-network=192.168.1.17/32, protocol=ip": {
                 "delay": "90ms",
                 "rate": "850K",
                 "filter_id": "800::800"
             },
-            "dst-network=192.168.0.134/32, protocol=ip": {
+            "dst-network=192.168.1.64/32, protocol=ip": {
                 "delay": "90ms",
                 "rate": "850K",
                 "filter_id": "800::800"
             },
-            "dst-network=192.168.1.11/32, protocol=ip": {
+            "dst-network=192.168.1.238/32, protocol=ip": {
                 "delay": "90ms",
                 "rate": "850K",
                 "filter_id": "800::800"
             },
-            "dst-network=192.168.1.9/32, protocol=ip": {
+            "dst-network=192.168.1.20/32, protocol=ip": {
                 "delay": "90ms",
                 "rate": "850K",
                 "filter_id": "800::800"
             },
-            "dst-network=192.168.1.168/32, protocol=ip": {
+            "dst-network=192.168.1.43/32, protocol=ip": {
                 "delay": "90ms",
                 "rate": "850K",
                 "filter_id": "800::800"
             }
         },
         "incoming": {
-            "dst-network=192.168.0.111/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.126/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.122/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.110/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.112/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.138/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
             "dst-network=192.168.1.139/32, protocol=ip": {
                 "delay": "100ms",
                 "rate": "420K",
                 "filter_id": "800::800"
             },
-            "dst-network=10.42.0.100/32, protocol=ip": {
+            "dst-network=192.168.1.168/32, protocol=ip": {
                 "delay": "100ms",
                 "rate": "420K",
                 "filter_id": "800::800"
             },
-            "dst-network=10.42.0.38/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=10.42.0.212/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.100/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.102/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.102/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.101/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.123/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.125/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.43.210/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.0.127/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.16/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.14/32, protocol=ip": {
-                "delay": "100ms",
-                "rate": "420K",
-                "filter_id": "800::800"
-            },
-            "dst-network=192.168.1.5/32, protocol=ip": {
+            "dst-network=192.168.1.239/32, protocol=ip": {
                 "delay": "100ms",
                 "rate": "420K",
                 "filter_id": "800::800"
@@ -253,32 +73,32 @@
                 "rate": "420K",
                 "filter_id": "800::800"
             },
-            "dst-network=192.168.1.15/32, protocol=ip": {
+            "dst-network=192.168.1.44/32, protocol=ip": {
                 "delay": "100ms",
                 "rate": "420K",
                 "filter_id": "800::800"
             },
-            "dst-network=192.168.1.10/32, protocol=ip": {
+            "dst-network=192.168.1.17/32, protocol=ip": {
                 "delay": "100ms",
                 "rate": "420K",
                 "filter_id": "800::800"
             },
-            "dst-network=192.168.0.134/32, protocol=ip": {
+            "dst-network=192.168.1.64/32, protocol=ip": {
                 "delay": "100ms",
                 "rate": "420K",
                 "filter_id": "800::800"
             },
-            "dst-network=192.168.1.11/32, protocol=ip": {
+            "dst-network=192.168.1.238/32, protocol=ip": {
                 "delay": "100ms",
                 "rate": "420K",
                 "filter_id": "800::800"
             },
-            "dst-network=192.168.1.9/32, protocol=ip": {
+            "dst-network=192.168.1.20/32, protocol=ip": {
                 "delay": "100ms",
                 "rate": "420K",
                 "filter_id": "800::800"
             },
-            "dst-network=192.168.1.168/32, protocol=ip": {
+            "dst-network=192.168.1.43/32, protocol=ip": {
                 "delay": "100ms",
                 "rate": "420K",
                 "filter_id": "800::800"

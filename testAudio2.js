@@ -6,6 +6,7 @@ var argv = require('minimist')(process.argv.slice(2));
 var duration = argv.duration;
 var file_no = 0, lock = 0;
 let music, word;
+var poisson = Number(argv.poisson) * 60000;
 
 var client = mqtt.connect('mqtt://localhost:1883');
 client.on('connect', function () {
@@ -14,7 +15,7 @@ client.on('connect', function () {
     }
     client.subscribe('watch1/readytolisten');
     client.subscribe('poisson/done');
-    var p = poissonProcess.create(60000, function callback() {
+    var p = poissonProcess.create(poisson, function callback() {
         if(lock == 0){
             file_no = getRandomInt(16);
             lock = 1;
