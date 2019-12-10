@@ -52,7 +52,11 @@ workbook.xlsx.readFile('./Examples.xlsx')   //Opening Examples.xlsx file to read
             exp_name = row.values[3];
             // *************************** STARTING server.js for each row in the file (each episode) ******************************************
             // equivalent to doing it individually in the cmd line as node server.js arg1 arg2 arg3 ........
-            require('child_process').execSync(`node ${server_file} --watch ${row.values[13]} --episodeId ` + row.values[2]+ ' --frequency ' + JSON.stringify(row.values[8]) + ' --profile ' + JSON.stringify(row.values[5])  + ' --targetDevice ' + targetDevice + ' --name ' + exp_name + ' --samsung ' + samsung_ip + ' --duration ' + row.values[6] + ' --payload ' + row.values[7] + ' --testtype ' + row.values[9] + ' --sensor ' + row.values[10] + ' --poisson ' + row.values[11]+ ' --model ' + row.values[12] + '; printf aus12345;', {stdio:[0,1,2]});
+            require('child_process').execSync(`node ${server_file} --watch ${row.values[13]} --episodeId ${row.values[2]} ` + 
+             `--frequency  ${JSON.stringify(row.values[8])} --profile  ${JSON.stringify(row.values[5])} ` + 
+             `--targetDevice ${targetDevice} --name ${exp_name} --samsung ${samsung_ip} --duration ${row.values[6]} ` + 
+             `--payload ${row.values[7]} --testtype ${row.values[9]} --sensor ${row.values[10]} ` + 
+             `--poisson ${row.values[11]} --model ${row.values[12]} --pe_or_po ${row.values[14]}; printf aus12345;`, {stdio:[0,1,2]});
             require('child_process').exec('printf "aus12345\n"');
             console.log('DONNEEEEEE WITH A ROWW');  //done with one row
             // execSync('killall tshark');

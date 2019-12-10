@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="description" content="LightSensor" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Light Sensor</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/toxicity"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="./paho-mqtt.js"></script>
+</head>
+
+<body>
+
+    <script type="text/javascript">
+        // The minimum prediction confidence.
+        const threshold = 0.75;
+        console.log('Hello there');
+        // Load the model. Users optionally pass in a threshold and an array of
+        // labels to include.
+        toxicity.load(threshold).then(model => {
+            const sentences = ['you suck'];
+
+            model.classify(sentences).then(predictions => {
+                // `predictions` is an array of objects, one for each prediction head,
+                // that contains the raw probabilities for each input along with the
+                // final prediction in `match` (either `true` or `false`).
+                // If neither prediction exceeds the threshold, `match` is `null`.
+
+                console.log(predictions);
+                console.log(predictions.length);
+                for(var i = 0; i<predictions.length; i++){
+                    if(predictions[i].results[0].match == true){
+                        console.log(predictions[i].label);
+                    }
+                }
+                /*
+                prints:
+                {
+                  "label": "identity_attack",
+                  "results": [{
+                    "probabilities": [0.9659664034843445, 0.03403361141681671],
+                    "match": false
+                  }]
+                },
+                {
+                  "label": "insult",
+                  "results": [{
+                    "probabilities": [0.08124706149101257, 0.9187529683113098],
+                    "match": true
+                  }]
+                },
+                ...
+                 */
+            });
+        });
+    </script>
+
+</body>
+
+</html>
