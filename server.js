@@ -35,7 +35,7 @@ const cass_client = new cassandra.Client({
 });
 
 //Experiment Number, which will create a table with that name
-var exp_num = 1;
+var exp_num = 10;
 
 // ================================== END IMPORTS SECTION ===============================================================
 
@@ -44,12 +44,12 @@ var exp_num = 1;
 */
 cass_client.connect(function (err) {
   //   console.log(err);
-  if(argv.testtype == 'audio' || argv.testtype == 'c_audio' || test_type == 'text' || test_type == 'text_offload'){
+  if(argv.testtype == 'audio' || argv.testtype == 'c_audio' || test_type == 'text_local' || test_type == 'text_offload'){
     cass_client.execute(`CREATE KEYSPACE IF NOT EXISTS watch_analytics WITH REPLICATION = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };`)
     .then(() => {
       console.log('Here Audio Test');
       // console.log('Heree');
-      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.tensorflow${exp_num}(Network_Profile text,Exp_Name text, episodeID text, timestamp bigint primary key, period int, Device_ID text, type text, poisson_frequency int, model int, in_word text, out_word text, prediction_time int, batterylevel double,cpuload double, availablememory double, totalmemory double, exp_type text, period_mode text);`,
+      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.tensorflow${exp_num}(Network_Profile text,Exp_Name text, episodeID text, timestamp bigint primary key, period double, Device_ID text, type text, poisson_frequency double, model int, in_word text, out_word text, prediction_time int, batterylevel double,cpuload double, availablememory double, totalmemory double, exp_type text, period_mode text);`,
         (err, result) => {
           console.log(err, result);
         });
@@ -59,7 +59,7 @@ cass_client.connect(function (err) {
     .then(() => {
       console.log('Here');
       // console.log('Heree');
-      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.sensors${exp_num}(Network_Profile text, frequency int, Exp_Name text, episodeID text, timestamp bigint primary key, period int, payload int, Device_ID text, type text, sensor_data double, device_data1 double, device_data2 text, batterylevel double,cpuload double, availablememory double, totalmemory double, roundtriptime int, sensor text, period_mode text, effort int, exp_type text );`,
+      cass_client.execute(`CREATE TABLE IF NOT EXISTS watch_analytics.sensors${exp_num}(Network_Profile text, frequency double, poisson_frequency double, Exp_Name text, episodeID text, timestamp bigint primary key, period int, payload int, Device_ID text, type text, sensor_data double, device_data1 double, device_data2 text, batterylevel double,cpuload double, availablememory double, totalmemory double, roundtriptime int, sensor text, period_mode text, effort int, exp_type text );`,
         (err, result) => {
           console.log(err, result);
         });
@@ -236,7 +236,7 @@ client.on('connect', function () {
         }
       });
     }
-     else if(test_type == 'text' || test_type == 'text_offload' && model == 2){
+     else if(test_type == 'text_local' || test_type == 'text_offload' && model == 2){
       execSync('~/tizen-studio1/tools/sdb shell launch_app I5BOVQ4uA1.HeartRateMonitor3', (err,stdout,stderr)=>{
         if(err){
           console.log('Error in launching app!');
@@ -346,10 +346,6 @@ client.on('message', function (topic, message) {
     } else if(argv.testtype == 'c_audio'){
       exp = 'offload';
       exec(`node ~/ayesh-server/Watch1CodeServer/testAudio2.js --duration ${duration} --poisson ${poisson} --model ${model}`);
-    } else if(test_type == 'sensor_offload'){
-      exec(`node ~/ayesh-server/Watch1CodeServer/sensor_offload.js --duration ${duration} --poisson ${poisson} --model ${model}`);
-    } else if(test_type == 'text_offload' && model == 2){
-      exec(`node ~/ayesh-server/Watch1CodeServer/text_offload.js --duration ${duration} --poisson ${poisson} --model ${model}`);
     }
   } else if(topic == 'watch3/connect'){
     console.log('Huawei Ready Received!');
@@ -365,8 +361,8 @@ client.on('message', function (topic, message) {
     var pkg = JSON.parse(message);
     // if(pkg.battery){
     console.log(`TimeStamp: ${new Date().getTime()} ; IN_Word: ${pkg.input_word} ; OUT_Word: ${pkg.output_word} ; Predic Time: ${pkg.predic_time} ; Battery level: ${pkg.battery.level} ; CPU Load: ${pkg.cpuLoad.load} ; Available Mem: ${pkg.av_Mem} ; Total Mem: ${pkg.totalMemory}`);
-    const query = `INSERT INTO watch_analytics.tensorflow${exp_num} (Network_Profile,episodeID, Exp_Name, timestamp, Device_ID, type, poisson_frequency, model, in_word, out_word, prediction_time, batterylevel,cpuload,availablememory,totalmemory, exp_type, period_mode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    const params = [argv.profile, episode, argv.name, new Date().getTime(), 'watch1', 'Samsung galaxy watch', Number(poisson), Number(model), pkg.input_word, pkg.output_word, pkg.predic_time, pkg.battery.level, pkg.cpuLoad.load, pkg.av_Mem, pkg.totalMemory, test_type, pe_or_po];
+    const query = `INSERT INTO watch_analytics.tensorflow${exp_num} (Network_Profile,episodeID, Exp_Name, timestamp, Device_ID, type, poisson_frequency, model, in_word, out_word, prediction_time, batterylevel,cpuload,availablememory,totalmemory, exp_type, period_mode, period) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const params = [argv.profile, episode, argv.name, new Date().getTime(), 'watch1', 'Samsung galaxy watch', Number(poisson), Number(model), pkg.input_word, pkg.output_word, pkg.predic_time, pkg.battery.level, pkg.cpuLoad.load, pkg.av_Mem, pkg.totalMemory, test_type, pe_or_po, argv.frequency];
     cass_client.execute(query, params, { prepare: true }, function (err) {
       console.log(err);
       //Inserted in the cluster

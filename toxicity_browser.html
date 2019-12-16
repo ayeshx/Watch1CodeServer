@@ -22,7 +22,7 @@
         // Load the model. Users optionally pass in a threshold and an array of
         // labels to include.
         toxicity.load(threshold).then(model => {
-            const sentences = ['you suck'];
+            const sentences = ['i love you'];
 
             model.classify(sentences).then(predictions => {
                 // `predictions` is an array of objects, one for each prediction head,
